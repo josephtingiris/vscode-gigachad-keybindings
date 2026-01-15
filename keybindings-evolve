@@ -1,0 +1,43 @@
+#!/usr/bin/bash
+
+# (C) 2026 Joseph Tingiris (joseph.tingiris@gmail.com)
+#
+# Licensed under the MIT License.
+#
+# Description:
+#
+# This script is part of the Gigachad VSCode Configuration Suite.
+#
+# It processes a given keybindings.json file to remove any defunct commands
+# and sorts the remaining keybindings for better organization.
+
+aborting() {
+    echo
+    echo "aborting ... ${@}"
+    echo
+    exit 1
+}
+
+usage() {
+    echo "usage: $0 <keybindings.json>"
+    exit 99
+}
+
+REALPATH="$(realpath "${0}")"
+DINAME="$(dirname "${REALPATH}")"               
+
+KEYBINDINGS_JSON="${1}"
+if [[ -z "${KEYBINDINGS_JSON}" || ! -f "${KEYBINDINGS_JSON}" ]]; then
+    usage
+fi
+
+TMPFILE="/tmp/keybindings-evolve.json"
+[ -f "${TMPFILE}"  ] && rm -f "${TMPFILE}"
+
+# strip comments and verify it's valid JSON with jq
+cat "${KEYBINDINGS_JSON}" | jsonc-strip-comments | jq . > /dev/null 2>&1
+if [[ $? -ne 0 ]]; then
+    aborting "'${KEYBINDINGS_JSON}' is not valid JSON"
+fi
+
+"${DINAME}/keybindings-remove.py" command gigachad < "${KEYBINDINGS_JSON}"
